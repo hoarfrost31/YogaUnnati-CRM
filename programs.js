@@ -353,14 +353,23 @@ function normalizeExplicitInternationalNumber(rawValue, digits) {
 
 function normalizePhoneNumber(phone) {
   const rawValue = String(phone || "").trim();
-  const digits = rawValue.replace(/\D/g, "");
+  let digits = rawValue.replace(/\D/g, "");
   if (!digits) {
     return "";
+  }
+
+  if (digits.startsWith("00") && digits.length > 4) {
+    digits = digits.slice(2);
   }
 
   const explicitInternational = normalizeExplicitInternationalNumber(rawValue, digits);
   if (explicitInternational) {
     return explicitInternational;
+  }
+
+  // Preserve likely international numbers instead of forcing them into India format.
+  if (digits.length >= 11 && digits.length <= 15 && !digits.startsWith("0") && !digits.startsWith("91")) {
+    return digits;
   }
 
   let normalized = digits;
@@ -379,13 +388,6 @@ function normalizePhoneNumber(phone) {
 
   if (normalized.length === 12 && normalized.startsWith("91")) {
     return normalized;
-  }
-
-  if (normalized.length > 10) {
-    const lastTenDigits = normalized.slice(-10);
-    if (/^[6-9]\d{9}$/.test(lastTenDigits)) {
-      return `91${lastTenDigits}`;
-    }
   }
 
   return normalized;
