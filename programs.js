@@ -325,10 +325,42 @@ function getContactStudentType(contactId) {
   return contact?.student_type || "regular_sessions";
 }
 
+function normalizeExplicitInternationalNumber(rawValue, digits) {
+  if (!String(rawValue || "").trim().startsWith("+")) {
+    return "";
+  }
+
+  let normalized = digits;
+
+  // Handle numbers entered like +44(0)7700... or +4407700...
+  for (let countryCodeLength = 1; countryCodeLength <= 3; countryCodeLength += 1) {
+    const countryCode = normalized.slice(0, countryCodeLength);
+    const nationalNumber = normalized.slice(countryCodeLength);
+
+    if (!countryCode || !nationalNumber.startsWith("0")) {
+      continue;
+    }
+
+    const withoutTrunkZero = `${countryCode}${nationalNumber.slice(1)}`;
+    if (withoutTrunkZero.length >= 8 && withoutTrunkZero.length <= 15) {
+      normalized = withoutTrunkZero;
+      break;
+    }
+  }
+
+  return normalized.length >= 8 && normalized.length <= 15 ? normalized : "";
+}
+
 function normalizePhoneNumber(phone) {
-  const digits = String(phone || "").replace(/\D/g, "");
+  const rawValue = String(phone || "").trim();
+  const digits = rawValue.replace(/\D/g, "");
   if (!digits) {
     return "";
+  }
+
+  const explicitInternational = normalizeExplicitInternationalNumber(rawValue, digits);
+  if (explicitInternational) {
+    return explicitInternational;
   }
 
   let normalized = digits;
