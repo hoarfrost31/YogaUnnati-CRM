@@ -164,6 +164,17 @@ This is hosting-ready as a static frontend. You can:
 - open `index.html` directly in a browser, or
 - deploy the `yoga-crm` folder to Netlify, Vercel static hosting, GitHub Pages, or any static host
 
+It also includes a basic PWA setup now:
+
+- `manifest.webmanifest` for install metadata
+- `sw.js` for app-shell caching
+- Android browsers can install it from GitHub Pages or another HTTPS host
+
+Important:
+
+- installability works best when served over HTTPS, such as GitHub Pages
+- the shell can open offline, but CRM data still depends on Supabase connectivity
+
 ## Included features
 
 - Add, edit, delete contacts
