@@ -138,17 +138,24 @@ Important: this makes the table openly accessible to anyone with your public sit
 
 ## 3. Add your Supabase URL and anon key
 
-Open `yoga-crm/app.js` and replace:
+The app no longer stores your live Supabase credentials in `app.js`.
 
-```js
-const SUPABASE_URL = "YOUR_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
-```
+Instead:
 
-With your project values from:
+1. open the app
+2. on first load, enter your Supabase Project URL and anon / publishable key when prompted
+3. the app stores them in browser localStorage on that device
+
+Use these values from:
 
 - Supabase Dashboard -> Project Settings -> API -> Project URL
 - Supabase Dashboard -> Project Settings -> API -> Project API Keys -> `anon` / `publishable`
+
+Important:
+
+- this removes the live credentials from the GitHub repo head
+- for a static GitHub Pages app, the entered key is still available to that browser session and should be treated as low-trust
+- because this CRM currently uses open anon policies, it is still suitable only for private/internal use, not public production use
 
 ## 4. Run or host it
 
