@@ -22,6 +22,7 @@ const state = {
   activeStudentType: "all",
   searchTerm: "",
   supabase: null,
+  contactModalMode: "edit",
 };
 
 function publishCRMData() {
@@ -65,6 +66,8 @@ const elements = {
   closeModalBtn: document.getElementById("closeModalBtn"),
   cancelBtn: document.getElementById("cancelBtn"),
   deleteContactBtn: document.getElementById("deleteContactBtn"),
+  editContactBtn: document.getElementById("editContactBtn"),
+  saveBtn: document.getElementById("saveBtn"),
   contactForm: document.getElementById("contactForm"),
   contactId: document.getElementById("contactId"),
   name: document.getElementById("name"),
@@ -598,13 +601,59 @@ function resetForm() {
   elements.contactForm.reset();
   elements.contactId.value = "";
   elements.deleteContactBtn.classList.add("hidden");
+  elements.editContactBtn.classList.add("hidden");
+  elements.saveBtn.classList.remove("hidden");
   elements.status.value = STATUS_OPTIONS[0];
   elements.studentType.value = STUDENT_TYPE_OPTIONS[0];
   elements.source.value = SOURCE_OPTIONS[0];
   elements.modalTitle.textContent = "Add Contact";
+  setContactFormReadOnly(false);
+  state.contactModalMode = "edit";
 }
 
-function openModal(contact = null) {
+function setContactFormReadOnly(isReadOnly) {
+  const fields = [
+    elements.name,
+    elements.phone,
+    elements.location,
+    elements.status,
+    elements.studentType,
+    elements.source,
+    elements.lastContacted,
+    elements.nextFollowup,
+    elements.notes,
+  ];
+
+  fields.forEach((field) => {
+    if (!field) {
+      return;
+    }
+
+    field.disabled = isReadOnly;
+    field.readOnly = isReadOnly;
+  });
+}
+
+function applyContactModalMode(contact = null, mode = "edit") {
+  const isReadOnly = mode === "view";
+  state.contactModalMode = mode;
+  setContactFormReadOnly(isReadOnly);
+
+  if (!contact) {
+    elements.modalTitle.textContent = "Add Contact";
+    elements.deleteContactBtn.classList.add("hidden");
+    elements.editContactBtn.classList.add("hidden");
+    elements.saveBtn.classList.remove("hidden");
+    return;
+  }
+
+  elements.modalTitle.textContent = isReadOnly ? "Contact Details" : "Edit Contact";
+  elements.deleteContactBtn.classList.toggle("hidden", isReadOnly);
+  elements.editContactBtn.classList.toggle("hidden", !isReadOnly);
+  elements.saveBtn.classList.toggle("hidden", isReadOnly);
+}
+
+function openModal(contact = null, { mode = "edit" } = {}) {
   if (!state.branches.length) {
     setStatusMessage("Create at least one branch before adding contacts.", true);
     openBranchModal();
@@ -614,8 +663,6 @@ function openModal(contact = null) {
   resetForm();
 
   if (contact) {
-    elements.modalTitle.textContent = "Edit Contact";
-    elements.deleteContactBtn.classList.remove("hidden");
     elements.contactId.value = contact.id;
     elements.name.value = contact.name || "";
     elements.phone.value = formatPhoneStorage(contact.phone || "");
@@ -628,6 +675,8 @@ function openModal(contact = null) {
     elements.notes.value = contact.notes || "";
   }
 
+  applyContactModalMode(contact, mode);
+
   elements.contactModal.classList.remove("hidden");
   elements.contactModal.setAttribute("aria-hidden", "false");
 }
@@ -639,7 +688,7 @@ function openContactFromExternal(contactId) {
     return false;
   }
 
-  openModal(contact);
+  openModal(contact, { mode: "view" });
   return true;
 }
 
@@ -1264,6 +1313,14 @@ function bindEvents() {
   elements.closeModalBtn.addEventListener("click", closeModal);
   elements.cancelBtn.addEventListener("click", closeModal);
   elements.deleteContactBtn.addEventListener("click", deleteCurrentContact);
+  elements.editContactBtn.addEventListener("click", () => {
+    const contact = getContactById(elements.contactId.value);
+    if (!contact) {
+      return;
+    }
+
+    openModal(contact, { mode: "edit" });
+  });
   elements.closeBranchModalBtn.addEventListener("click", closeBranchModal);
   elements.contactForm.addEventListener("submit", saveContact);
   elements.branchForm.addEventListener("submit", saveBranch);
