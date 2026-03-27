@@ -1,4 +1,4 @@
-const CACHE_NAME = "yogaunnati-crm-v2";
+const CACHE_VERSION = "app-cache-v3";
 const APP_SHELL_ASSETS = [
   "./",
   "./index.html",
@@ -7,17 +7,17 @@ const APP_SHELL_ASSETS = [
   "./app.js",
   "./programs.js",
   "./participant-form.js",
+  "./pwa.js",
   "./manifest.webmanifest",
   "./logo.png",
   "./icon-192.png",
   "./icon-512.png",
 ];
 
-function isAppShellRequest(requestUrl) {
-  const pathname = requestUrl.pathname.toLowerCase();
+function isNetworkFirstAsset(url) {
+  const pathname = url.pathname.toLowerCase();
   return (
     pathname.endsWith("/") ||
-    pathname.endsWith("/index.html") ||
     pathname.endsWith(".html") ||
     pathname.endsWith(".css") ||
     pathname.endsWith(".js") ||
@@ -27,20 +27,27 @@ function isAppShellRequest(requestUrl) {
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL_ASSETS)),
+    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL_ASSETS)),
   );
-  self.skipWaiting();
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(
-      keys
-        .filter((key) => key !== CACHE_NAME)
-        .map((key) => caches.delete(key)),
-    )),
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key)));
+    await self.clients.claim();
+
+    const clients = await self.clients.matchAll({ type: "window" });
+    clients.forEach((client) => {
+      client.postMessage({ type: "SW_ACTIVATED", version: CACHE_VERSION });
+    });
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
@@ -48,56 +55,47 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  const requestUrl = new URL(event.request.url);
-  if (requestUrl.origin !== self.location.origin) {
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) {
     return;
   }
 
-  if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html"))),
-    );
-    return;
-  }
-
-  if (isAppShellRequest(requestUrl)) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type !== "basic") {
-            return response;
-          }
-
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-          return response;
-        })
-        .catch(() => caches.match(event.request)),
-    );
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
-
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== "basic") {
-          return response;
+  if (isNetworkFirstAsset(url)) {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(event.request);
+        if (response && response.status === 200 && response.type === "basic") {
+          const cache = await caches.open(CACHE_VERSION);
+          cache.put(event.request, response.clone());
+        }
+        return response;
+      } catch {
+        const cached = await caches.match(event.request);
+        if (cached) {
+          return cached;
         }
 
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-        return response;
-      });
-    }),
-  );
+        if (event.request.mode === "navigate") {
+          return caches.match("./index.html");
+        }
+
+        throw new Error("Network unavailable and asset not cached.");
+      }
+    })());
+    return;
+  }
+
+  event.respondWith((async () => {
+    const cached = await caches.match(event.request);
+    if (cached) {
+      return cached;
+    }
+
+    const response = await fetch(event.request);
+    if (response && response.status === 200 && response.type === "basic") {
+      const cache = await caches.open(CACHE_VERSION);
+      cache.put(event.request, response.clone());
+    }
+    return response;
+  })());
 });
