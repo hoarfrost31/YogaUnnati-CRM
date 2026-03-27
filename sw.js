@@ -1,4 +1,4 @@
-const CACHE_NAME = "yogaunnati-crm-v1";
+const CACHE_NAME = "yogaunnati-crm-v2";
 const APP_SHELL_ASSETS = [
   "./",
   "./index.html",
@@ -12,6 +12,18 @@ const APP_SHELL_ASSETS = [
   "./icon-192.png",
   "./icon-512.png",
 ];
+
+function isAppShellRequest(requestUrl) {
+  const pathname = requestUrl.pathname.toLowerCase();
+  return (
+    pathname.endsWith("/") ||
+    pathname.endsWith("/index.html") ||
+    pathname.endsWith(".html") ||
+    pathname.endsWith(".css") ||
+    pathname.endsWith(".js") ||
+    pathname.endsWith(".webmanifest")
+  );
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -46,10 +58,27 @@ self.addEventListener("fetch", (event) => {
       fetch(event.request)
         .then((response) => {
           const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", responseClone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
           return response;
         })
         .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html"))),
+    );
+    return;
+  }
+
+  if (isAppShellRequest(requestUrl)) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (!response || response.status !== 200 || response.type !== "basic") {
+            return response;
+          }
+
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          return response;
+        })
+        .catch(() => caches.match(event.request)),
     );
     return;
   }

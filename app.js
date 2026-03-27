@@ -1,5 +1,5 @@
-const SUPABASE_URL = "YOUR_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://qrwrspankstzpzxqdqnt.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyd3JzcGFua3N0enB6eHFkcW50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MDM2ODUsImV4cCI6MjA5MDE3OTY4NX0.Td4y5Qc-VMBUWQRiTsy7dJZJVthoQpbmNeH23AjROoo";
 const CONTACTS_TABLE = "contacts";
 const BRANCHES_TABLE = "branches";
 const PROGRAMS_TABLE = "programs";
@@ -10,8 +10,6 @@ const STUDENT_TYPE_OPTIONS = ["regular_sessions", "hatha_yoga"];
 const LOCAL_PROGRAMS_STORAGE_KEY = "yoga-crm-programs";
 const ACTIVE_BRANCH_STORAGE_KEY = "yoga-crm-active-branch";
 const ACTIVE_BRANCH_NAME_STORAGE_KEY = "yoga-crm-active-branch-name";
-const SUPABASE_URL_STORAGE_KEY = "yoga-crm-supabase-url";
-const SUPABASE_ANON_KEY_STORAGE_KEY = "yoga-crm-supabase-anon-key";
 
 const state = {
   contacts: [],
@@ -91,68 +89,18 @@ function hasSupabaseConfig(url, anonKey) {
   return Boolean(url && anonKey) && !url.includes("YOUR_") && !anonKey.includes("YOUR_");
 }
 
-function loadSupabaseConfig() {
-  try {
-    const url = window.localStorage.getItem(SUPABASE_URL_STORAGE_KEY) || SUPABASE_URL;
-    const anonKey = window.localStorage.getItem(SUPABASE_ANON_KEY_STORAGE_KEY) || SUPABASE_ANON_KEY;
-    return {
-      url: url.trim(),
-      anonKey: anonKey.trim(),
-    };
-  } catch {
-    return {
-      url: SUPABASE_URL,
-      anonKey: SUPABASE_ANON_KEY,
-    };
-  }
-}
-
-function persistSupabaseConfig(url, anonKey) {
-  try {
-    window.localStorage.setItem(SUPABASE_URL_STORAGE_KEY, url);
-    window.localStorage.setItem(SUPABASE_ANON_KEY_STORAGE_KEY, anonKey);
-  } catch {}
-}
-
-function promptForSupabaseConfig() {
-  const existingConfig = loadSupabaseConfig();
-  const url = window.prompt("Enter your Supabase Project URL", existingConfig.url.includes("YOUR_") ? "" : existingConfig.url);
-  if (!url) {
-    return false;
-  }
-
-  const anonKey = window.prompt("Enter your Supabase anon / publishable key", existingConfig.anonKey.includes("YOUR_") ? "" : existingConfig.anonKey);
-  if (!anonKey) {
-    return false;
-  }
-
-  const trimmedUrl = url.trim();
-  const trimmedAnonKey = anonKey.trim();
-  if (!hasSupabaseConfig(trimmedUrl, trimmedAnonKey)) {
-    return false;
-  }
-
-  persistSupabaseConfig(trimmedUrl, trimmedAnonKey);
-  return true;
-}
-
 function initializeSupabase() {
   if (!window.supabase) {
     setStatusMessage("Supabase library failed to load.", true);
     return;
   }
 
-  let { url, anonKey } = loadSupabaseConfig();
-  if (!hasSupabaseConfig(url, anonKey)) {
-    const configured = promptForSupabaseConfig();
-    ({ url, anonKey } = loadSupabaseConfig());
-    if (!configured || !hasSupabaseConfig(url, anonKey)) {
-      setStatusMessage("Supabase is not configured on this device yet. Refresh and enter the Project URL and anon key to continue.", true);
-      return;
-    }
+  if (!hasSupabaseConfig(SUPABASE_URL, SUPABASE_ANON_KEY)) {
+    setStatusMessage("Supabase is not configured in app.js yet.", true);
+    return;
   }
 
-  state.supabase = window.supabase.createClient(url, anonKey);
+  state.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
 function setStatusMessage(message, isWarning = false) {
