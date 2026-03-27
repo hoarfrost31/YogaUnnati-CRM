@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YogaUnnati Participant Form</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="participant-form-page">
+  <main class="participant-shell">
+    <section class="participant-hero">
+      <div class="brand-lockup">
+        <div class="brand-mark">
+          <img src="logo.png" alt="YogaUnnati logo">
+        </div>
+        <div>
+          <h1>YogaUnnati Participant Form</h1>
+          <p class="subtitle">A simple registration form for new enquiries and prospective participants.</p>
+        </div>
+      </div>
+      <div class="hero-note">
+        <span>Frontend only</span>
+        <strong>Not connected to CRM yet</strong>
+      </div>
+    </section>
+
+    <section class="participant-panel">
+      <div class="participant-panel-head">
+        <div>
+          <p class="eyebrow">Registration</p>
+          <h2>Tell us a little about yourself</h2>
+        </div>
+        <p class="helper-text">This form currently collects details only on the page. It does not submit to the database yet.</p>
+      </div>
+
+      <form id="participantForm" class="participant-form">
+        <div class="form-grid">
+          <label class="field">
+            <span>Full Name</span>
+            <input id="participantName" name="name" type="text" placeholder="Your full name" required>
+          </label>
+
+          <label class="field">
+            <span>Phone Number</span>
+            <input id="participantPhone" name="phone" type="tel" placeholder="+91 98765 43210" required>
+          </label>
+
+          <label class="field">
+            <span>Branch</span>
+            <select id="participantBranch" name="branch" required>
+              <option value="">Select branch</option>
+              <option value="YogaUnnati Katraj Reg">YogaUnnati Katraj Reg</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Student Type</span>
+            <select id="participantStudentType" name="student_type" required>
+              <option value="">Select type</option>
+              <option value="regular_sessions">Regular Sessions</option>
+              <option value="hatha_yoga">Hatha Yoga</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Location</span>
+            <input id="participantLocation" name="location" type="text" placeholder="Area or locality">
+          </label>
+
+          <label class="field">
+            <span>Preferred Start Date</span>
+            <input id="participantStartDate" name="preferred_start_date" type="date">
+          </label>
+
+          <label class="field full-width">
+            <span>Goals / Notes</span>
+            <textarea id="participantNotes" name="notes" rows="5" placeholder="Share your goals, concerns, schedule preference, or any health context"></textarea>
+          </label>
+
+          <label class="field full-width checkbox-field">
+            <input id="participantConsent" name="consent" type="checkbox" required>
+            <span>I agree to be contacted by the studio regarding classes and follow-up.</span>
+          </label>
+        </div>
+
+        <div class="participant-actions">
+          <button class="ghost-btn" id="resetParticipantForm" type="reset">Reset</button>
+          <button class="primary-btn" type="submit">Submit Form</button>
+        </div>
+      </form>
+
+      <div class="participant-success hidden" id="participantSuccess" aria-live="polite">
+        <p class="eyebrow">Preview Saved</p>
+        <h2>Form captured locally</h2>
+        <p class="helper-text">This is a frontend-only preview state. When you want, we can connect it to Supabase so submissions appear inside the CRM automatically.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="participant-form.js"></script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YogaUnnati CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="brand-hero">
+      <div class="brand-copy">
+        <div class="brand-lockup">
+          <div class="brand-mark">
+            <img src="logo.png" alt="YogaUnnati logo">
+          </div>
+          <div>
+            <h1>YogaUnnati CRM</h1>
+          </div>
+        </div>
+        <p class="subtitle">Manage contacts and scheduled programs from one simple workspace.</p>
+      </div>
+      <div class="hero-actions">
+        <div class="branch-dropdown">
+          <button class="hero-utility-btn" id="manageBranchesBtn" type="button" aria-haspopup="menu" aria-expanded="false">
+            <span id="manageBranchesLabel">Branches</span>
+            <span class="branch-dropdown-icon" aria-hidden="true">▾</span>
+          </button>
+          <div class="branch-dropdown-menu hidden" id="branchDropdownMenu" role="menu" aria-label="Branch actions">
+            <div class="branch-dropdown-list" id="branchDropdownList">
+              <p class="branch-dropdown-empty">No branches yet.</p>
+            </div>
+            <button class="branch-dropdown-action branch-dropdown-add" id="addBranchQuickBtn" type="button" role="menuitem">
+              <span class="branch-dropdown-add-icon" aria-hidden="true">+</span>
+              <span>Add Branch</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace-bar">
+      <nav class="tab-bar" aria-label="CRM sections">
+        <button class="tab-btn active" id="programsTabBtn" type="button" onclick="window.switchCRMTab && window.switchCRMTab('programs')">Programs</button>
+        <button class="tab-btn" id="contactsTabBtn" type="button" onclick="window.switchCRMTab && window.switchCRMTab('contacts')">Contacts</button>
+      </nav>
+      <div class="workspace-actions">
+        <button class="workspace-primary-btn" id="addProgramBtn" type="button">Add Program</button>
+        <button class="workspace-primary-btn hidden" id="addContactBtn" type="button">Add Contact</button>
+      </div>
+    </div>
+
+    <section id="contactsView" class="hidden">
+      <section class="summary-grid" aria-label="CRM summary">
+        <article class="summary-card">
+          <span>Total Contacts</span>
+          <strong id="totalContacts">0</strong>
+        </article>
+        <article class="summary-card">
+          <span>Needs Follow-up</span>
+          <strong id="dueContacts">0</strong>
+        </article>
+        <article class="summary-card">
+          <span>Joined</span>
+          <strong id="joinedContacts">0</strong>
+        </article>
+      </section>
+
+      <section class="panel controls-panel">
+        <div class="controls-row">
+          <label class="field search-field">
+            <span>Search</span>
+            <input id="searchInput" type="search" placeholder="Search name, phone, location, source, notes">
+          </label>
+          <label class="field compact-field">
+            <span>Status Filter</span>
+            <select id="statusFilter">
+              <option value="all">All statuses</option>
+              <option value="lead">Lead</option>
+              <option value="trial">Trial</option>
+              <option value="joined">Joined</option>
+              <option value="completed">Completed</option>
+              <option value="dropped">Dropped</option>
+              <option value="dried">Dried</option>
+            </select>
+          </label>
+          <label class="field compact-field">
+            <span>Student Type</span>
+            <select id="studentTypeFilter">
+              <option value="all">All types</option>
+              <option value="regular_sessions">Regular Sessions</option>
+              <option value="hatha_yoga">Hatha Yoga</option>
+            </select>
+          </label>
+          <button class="ghost-btn" id="clearFiltersBtn" type="button">Clear</button>
+        </div>
+        <p class="filter-count filter-count-soft" id="filterCount">Showing 0 of 0 contacts</p>
+        <p class="helper-text" id="statusMessage">Connect your Supabase project in <code>app.js</code> to start managing contacts.</p>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="table-wrap contacts-table-wrap">
+          <table class="contacts-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Location</th>
+                <th>Student Type</th>
+                <th>Status</th>
+                <th>Last Contacted</th>
+                <th>Next Follow-up</th>
+                <th>Notes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="contactsTableBody">
+              <tr>
+                <td colspan="9" class="empty-state-cell">No contacts yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section id="programsView">
+      <section class="summary-grid" aria-label="Programs summary">
+        <article class="summary-card">
+          <span>Total Programs</span>
+          <strong id="programsCount">0</strong>
+        </article>
+        <article class="summary-card">
+          <span>Upcoming</span>
+          <strong id="programsUpcoming">0</strong>
+        </article>
+        <article class="summary-card">
+          <span>Linked Contacts</span>
+          <strong id="programsLinked">0</strong>
+        </article>
+      </section>
+
+      <section class="panel controls-panel">
+        <div class="controls-row">
+          <label class="field search-field">
+            <span>Search Programs</span>
+            <input id="programSearchInput" type="search" placeholder="Search program name, notes, or linked contact">
+          </label>
+        </div>
+        <p class="filter-count filter-count-soft" id="programFilterCount">Showing 0 of 0 programs</p>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="table-wrap">
+          <table class="programs-table">
+            <thead>
+              <tr>
+                <th>Program</th>
+                <th>Branch</th>
+                <th>Scheduled</th>
+                <th>Linked Contacts</th>
+                <th>Notes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="programsTableBody">
+              <tr>
+                <td colspan="6" class="empty-state-cell">No programs yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <div class="modal hidden" id="contactModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Contact Form</p>
+          <h2 id="modalTitle">Add Contact</h2>
+        </div>
+        <button class="icon-btn" id="closeModalBtn" type="button" aria-label="Close form">&times;</button>
+      </div>
+
+      <form id="contactForm">
+        <input type="hidden" id="contactId">
+
+        <div class="form-grid">
+          <label class="field">
+            <span>Name</span>
+            <input id="name" name="name" type="text" placeholder="Full name" required>
+          </label>
+
+          <label class="field">
+            <span>Phone Numbers</span>
+            <textarea id="phone" name="phone" rows="3" placeholder="+91 98765 43210&#10;98765 43211&#10;Separate multiple numbers with a new line or comma" required></textarea>
+          </label>
+
+          <label class="field">
+            <span>Location</span>
+            <input id="location" name="location" type="text" placeholder="Indiranagar, Bengaluru">
+          </label>
+
+          <label class="field">
+            <span>Status</span>
+            <select id="status" name="status" required>
+              <option value="lead">Lead</option>
+              <option value="trial">Trial</option>
+              <option value="joined">Joined</option>
+              <option value="completed">Completed</option>
+              <option value="dropped">Dropped</option>
+              <option value="dried">Dried</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Student Type</span>
+            <select id="studentType" name="student_type" required>
+              <option value="regular_sessions">Regular Sessions</option>
+              <option value="hatha_yoga">Hatha Yoga</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Source</span>
+            <select id="source" name="source" required>
+              <option value="call">Call</option>
+              <option value="form">Form</option>
+              <option value="referral">Referral</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Last Contacted</span>
+            <input id="lastContacted" name="last_contacted" type="date">
+          </label>
+
+          <label class="field">
+            <span>Next Follow-up</span>
+            <input id="nextFollowup" name="next_followup" type="date">
+          </label>
+
+          <label class="field full-width">
+            <span>Notes</span>
+            <textarea id="notes" name="notes" rows="4" placeholder="Any context, interest level, or class preference"></textarea>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button class="table-action delete-action hidden" id="deleteContactBtn" type="button">Delete Contact</button>
+          <button class="ghost-btn" id="cancelBtn" type="button">Cancel</button>
+          <button class="primary-btn" id="saveBtn" type="submit">Save Contact</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="programModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="programModalTitle">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Program Form</p>
+          <h2 id="programModalTitle">Add Program</h2>
+        </div>
+        <button class="icon-btn" id="closeProgramModalBtn" type="button" aria-label="Close program form">&times;</button>
+      </div>
+
+      <form id="programForm">
+        <input type="hidden" id="programId">
+
+        <div class="form-grid">
+          <label class="field">
+            <span>Program Name</span>
+            <input id="programName" name="name" type="text" placeholder="Morning Hatha Batch" required>
+          </label>
+
+          <label class="field">
+            <span>Scheduled Date</span>
+            <input id="programScheduledFor" name="scheduled_for" type="date">
+          </label>
+
+          <div class="full-width program-form-sections">
+            <div class="program-form-tabs" role="tablist" aria-label="Program details sections">
+              <button class="program-form-tab active" id="programContactsSectionTab" type="button" data-program-section-tab="contacts">Link Contacts</button>
+              <button class="program-form-tab" id="programNotesSectionTab" type="button" data-program-section-tab="notes">Notes</button>
+              <button class="program-form-tab" id="programWhatsappSectionTab" type="button" data-program-section-tab="whatsapp">WhatsApp</button>
+            </div>
+
+            <div class="program-form-panel" id="programContactsSection" role="tabpanel" aria-labelledby="programContactsSectionTab">
+              <div class="field">
+                <div class="program-link-toolbar">
+                  <label class="field compact-field">
+                    <span>Filter Students</span>
+                    <select id="programStudentTypeFilter">
+                      <option value="all">All students</option>
+                      <option value="regular_sessions">Regular Sessions</option>
+                      <option value="hatha_yoga">Hatha Yoga</option>
+                    </select>
+                  </label>
+                  <label class="field compact-field">
+                    <span>Filter Status</span>
+                    <select id="programStatusFilter">
+                      <option value="all">All statuses</option>
+                      <option value="lead">Lead</option>
+                      <option value="trial">Trial</option>
+                      <option value="joined">Joined</option>
+                      <option value="completed">Completed</option>
+                      <option value="dropped">Dropped</option>
+                      <option value="dried">Dried</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="program-contact-grid" id="programContactsGrid">
+                  <p class="helper-text">Select a branch first to see matching contacts.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="program-form-panel hidden" id="programNotesSection" role="tabpanel" aria-labelledby="programNotesSectionTab">
+              <label class="field">
+                <span>Notes</span>
+                <textarea id="programNotes" class="program-editor-textarea" name="notes" rows="10" placeholder="Teacher, timing, format, or any useful schedule note"></textarea>
+              </label>
+            </div>
+
+            <div class="program-form-panel hidden" id="programWhatsappSection" role="tabpanel" aria-labelledby="programWhatsappSectionTab">
+              <label class="field">
+                <span>WhatsApp Template</span>
+                <textarea id="programWhatsappTemplate" class="program-editor-textarea" name="whatsapp_template" rows="12" placeholder="Hi {{name}}, this is a reminder from YogaUnnati about {{program}}{{date_sentence}}."></textarea>
+                <small class="helper-text">Placeholders: <code>{{name}}</code>, <code>{{program}}</code>, <code>{{date}}</code>, <code>{{branch}}</code>, <code>{{date_sentence}}</code></small>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="table-action delete-action hidden" id="deleteProgramBtn" type="button">Delete Program</button>
+          <button class="ghost-btn" id="cancelProgramBtn" type="button">Cancel</button>
+          <button class="primary-btn" type="submit">Save Program</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="branchModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card branch-modal-card" role="dialog" aria-modal="true" aria-labelledby="branchModalTitle">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Branches</p>
+          <h2 id="branchModalTitle">Manage studio branches</h2>
+        </div>
+        <button class="icon-btn" id="closeBranchModalBtn" type="button" aria-label="Close branch manager">&times;</button>
+      </div>
+
+      <div class="branch-manager">
+        <form id="branchForm" class="branch-form">
+          <label class="field branch-field">
+            <span>New Branch Name</span>
+            <input id="branchName" name="branchName" type="text" placeholder="Add a new studio branch" required>
+          </label>
+          <button class="primary-btn" type="submit">Add Branch</button>
+        </form>
+
+        <p class="helper-text" id="branchHelperText">Create branches here, then assign contacts and programs to them.</p>
+
+        <ul class="branches-list" id="branchesList">
+          <li class="branch-empty">No branches yet.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+  <script src="programs.js"></script>
+</body>
+</html>

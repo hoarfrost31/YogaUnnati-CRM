@@ -1,0 +1,8 @@
+Thumbs.db
+.DS_Store
+desktop.ini
+
+.vscode/
+.idea/
+
+SupabaseDetails.txt
