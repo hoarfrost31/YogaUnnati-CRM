@@ -47,7 +47,12 @@ const programUiState = {
   batchStatusFilter: "all",
   selectedBatchContactIds: [],
   remoteLoaded: false,
-  isSyncing: false,
+  isSyncingPrograms: false,
+  isSyncingBatches: false,
+  pendingProgramsRefresh: false,
+  pendingBatchesRefresh: false,
+  pendingProgramsMigration: false,
+  pendingBatchesMigration: false,
 };
 
 const programEls = {
@@ -338,15 +343,19 @@ async function fetchProgramsFromSupabase({ migrateCache = true } = {}) {
     return;
   }
 
-  if (programUiState.isSyncing) {
+  if (programUiState.isSyncingPrograms) {
+    programUiState.pendingProgramsRefresh = true;
+    programUiState.pendingProgramsMigration = programUiState.pendingProgramsMigration || migrateCache;
     return;
   }
 
-  programUiState.isSyncing = true;
+  programUiState.isSyncingPrograms = true;
+  const allowMigration = migrateCache || programUiState.pendingProgramsMigration;
+  programUiState.pendingProgramsMigration = false;
 
   try {
     const remotePrograms = (await api.loadPrograms()).map(normalizeProgram).filter(Boolean);
-    const shouldMigrate = migrateCache && !isMigrationComplete(PROGRAMS_MIGRATION_FLAG_KEY);
+    const shouldMigrate = allowMigration && !isMigrationComplete(PROGRAMS_MIGRATION_FLAG_KEY);
     if (shouldMigrate) {
       await migrateCachedProgramsToSupabase(remotePrograms);
       markMigrationComplete(PROGRAMS_MIGRATION_FLAG_KEY);
@@ -366,7 +375,13 @@ async function fetchProgramsFromSupabase({ migrateCache = true } = {}) {
     syncProgramsWithCRM({ reloadFromStorage: true });
     renderProgramsTable();
   } finally {
-    programUiState.isSyncing = false;
+    programUiState.isSyncingPrograms = false;
+    if (programUiState.pendingProgramsRefresh) {
+      const rerunWithMigration = programUiState.pendingProgramsMigration;
+      programUiState.pendingProgramsRefresh = false;
+      programUiState.pendingProgramsMigration = false;
+      void fetchProgramsFromSupabase({ migrateCache: rerunWithMigration });
+    }
   }
 }
 
@@ -552,9 +567,19 @@ async function fetchBatchesFromSupabase({ migrateCache = true } = {}) {
     return;
   }
 
+  if (programUiState.isSyncingBatches) {
+    programUiState.pendingBatchesRefresh = true;
+    programUiState.pendingBatchesMigration = programUiState.pendingBatchesMigration || migrateCache;
+    return;
+  }
+
+  programUiState.isSyncingBatches = true;
+  const allowMigration = migrateCache || programUiState.pendingBatchesMigration;
+  programUiState.pendingBatchesMigration = false;
+
   try {
     const remoteBatches = (await api.loadBatches()).map(normalizeBatch).filter(Boolean);
-    const shouldMigrate = migrateCache && !isMigrationComplete(BATCHES_MIGRATION_FLAG_KEY);
+    const shouldMigrate = allowMigration && !isMigrationComplete(BATCHES_MIGRATION_FLAG_KEY);
     if (shouldMigrate) {
       await migrateCachedBatchesToSupabase(remoteBatches);
       markMigrationComplete(BATCHES_MIGRATION_FLAG_KEY);
@@ -572,6 +597,14 @@ async function fetchBatchesFromSupabase({ migrateCache = true } = {}) {
     api.setStatusMessage?.(`Could not load batches: ${error.message}`, true);
     syncBatchesWithCRM({ reloadFromStorage: true });
     renderBatchesTable();
+  } finally {
+    programUiState.isSyncingBatches = false;
+    if (programUiState.pendingBatchesRefresh) {
+      const rerunWithMigration = programUiState.pendingBatchesMigration;
+      programUiState.pendingBatchesRefresh = false;
+      programUiState.pendingBatchesMigration = false;
+      void fetchBatchesFromSupabase({ migrateCache: rerunWithMigration });
+    }
   }
 }
 
@@ -1360,8 +1393,8 @@ function renderBatchesTable() {
       <tr>
         <td class="batch-name-cell"><strong>${escapeHtml(batch.name)}</strong></td>
         <td class="batch-time-cell">${escapeHtml(formatBatchTime(batch))}</td>
-        <td class="batch-capacity-cell">${escapeHtml(String(batch.participantCapacity || 0))}</td>
         <td class="batch-count-cell">${escapeHtml(String(batch.participantCount || 0))}</td>
+        <td class="batch-capacity-cell">${escapeHtml(String(batch.participantCapacity || 0))}</td>
         <td class="programs-cell">${linkedContacts}</td>
         <td class="actions-cell program-actions-cell">
           <div class="actions-group">

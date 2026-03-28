@@ -786,10 +786,7 @@ textarea {
   min-width: 200px;
 }
 
-.batch-name-cell strong,
-.batch-count-cell,
-.batch-capacity-cell,
-.batch-time-cell {
+.batch-name-cell strong {
   display: block;
 }
 
@@ -1122,8 +1119,8 @@ code {
 
   .batches-table tbody td:nth-child(1)::before { content: "Batch"; }
   .batches-table tbody td:nth-child(2)::before { content: "Time"; }
-  .batches-table tbody td:nth-child(3)::before { content: "Capacity"; }
-  .batches-table tbody td:nth-child(4)::before { content: "Current Count"; }
+  .batches-table tbody td:nth-child(3)::before { content: "Current Count"; }
+  .batches-table tbody td:nth-child(4)::before { content: "Capacity"; }
   .batches-table tbody td:nth-child(5)::before { content: "Linked Contacts"; }
   .batches-table tbody td:nth-child(6)::before { content: "Actions"; }
 
