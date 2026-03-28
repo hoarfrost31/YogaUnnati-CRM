@@ -3,11 +3,13 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const CONTACTS_TABLE = "contacts";
 const BRANCHES_TABLE = "branches";
 const PROGRAMS_TABLE = "programs";
+const BATCHES_TABLE = "batches";
 
 const STATUS_OPTIONS = ["lead", "trial", "joined", "completed", "dropped", "dried"];
 const SOURCE_OPTIONS = ["call", "form", "referral"];
 const STUDENT_TYPE_OPTIONS = ["regular_sessions", "hatha_yoga"];
 const LOCAL_PROGRAMS_STORAGE_KEY = "yoga-crm-programs";
+const LOCAL_BATCHES_STORAGE_KEY = "yoga-crm-batches";
 const ACTIVE_BRANCH_STORAGE_KEY = "yoga-crm-active-branch";
 const ACTIVE_BRANCH_NAME_STORAGE_KEY = "yoga-crm-active-branch-name";
 
@@ -238,6 +240,21 @@ function setLocalPrograms(programs) {
   } catch {}
 }
 
+function getLocalBatches() {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_BATCHES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setLocalBatches(batches) {
+  try {
+    window.localStorage.setItem(LOCAL_BATCHES_STORAGE_KEY, JSON.stringify(batches));
+  } catch {}
+}
+
 function normalizeProgramRecord(program) {
   if (!program || typeof program !== "object") {
     return null;
@@ -273,6 +290,49 @@ function getProgramPayload(program) {
     whatsapp_template: program.whatsappTemplate || null,
     contact_ids: Array.isArray(program.contactIds)
       ? program.contactIds
+        .map((contactId) => Number(contactId))
+        .filter((contactId) => Number.isFinite(contactId))
+      : [],
+  };
+}
+
+function normalizeBatchRecord(batch) {
+  if (!batch || typeof batch !== "object") {
+    return null;
+  }
+
+  const contactIds = Array.isArray(batch.contact_ids)
+    ? batch.contact_ids
+    : Array.isArray(batch.contactIds)
+      ? batch.contactIds
+      : [];
+
+  return {
+    id: String(batch.id),
+    branchId: String(batch.branch_id ?? batch.branchId ?? ""),
+    name: String(batch.name || "").trim(),
+    startTime: batch.start_time ?? batch.startTime ?? "",
+    endTime: batch.end_time ?? batch.endTime ?? "",
+    participantCapacity: Number(batch.participant_capacity ?? batch.participantCapacity ?? 0) || 0,
+    participantCount: Number(batch.participant_count ?? batch.participantCount ?? 0) || 0,
+    contactIds: contactIds
+      .map((contactId) => Number(contactId))
+      .filter((contactId) => Number.isFinite(contactId)),
+    createdAt: batch.created_at ?? batch.createdAt ?? null,
+  };
+}
+
+function getBatchPayload(batch) {
+  return {
+    id: String(batch.id),
+    branch_id: Number(batch.branchId),
+    name: String(batch.name || "").trim(),
+    start_time: batch.startTime || null,
+    end_time: batch.endTime || null,
+    participant_capacity: Number(batch.participantCapacity) || 0,
+    participant_count: Number(batch.participantCount) || 0,
+    contact_ids: Array.isArray(batch.contactIds)
+      ? batch.contactIds
         .map((contactId) => Number(contactId))
         .filter((contactId) => Number.isFinite(contactId))
       : [],
@@ -937,6 +997,93 @@ async function countProgramsByBranch(branchId) {
   return count || 0;
 }
 
+async function loadBatches() {
+  if (!state.supabase) {
+    return getLocalBatches()
+      .map(normalizeBatchRecord)
+      .filter(Boolean);
+  }
+
+  const { data, error } = await state.supabase
+    .from(BATCHES_TABLE)
+    .select("*")
+    .order("start_time", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  const batches = (data || []).map(normalizeBatchRecord).filter(Boolean);
+  setLocalBatches(batches);
+  return batches;
+}
+
+async function upsertBatch(batch) {
+  if (!state.supabase) {
+    throw new Error("Supabase is not configured yet.");
+  }
+
+  const { data, error } = await state.supabase
+    .from(BATCHES_TABLE)
+    .upsert(getBatchPayload(batch), { onConflict: "id" })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return normalizeBatchRecord(data);
+}
+
+async function deleteBatch(batchId) {
+  if (!state.supabase) {
+    throw new Error("Supabase is not configured yet.");
+  }
+
+  const { error } = await state.supabase
+    .from(BATCHES_TABLE)
+    .delete()
+    .eq("id", String(batchId));
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function deleteBatchesByBranch(branchId) {
+  if (!state.supabase) {
+    return;
+  }
+
+  const { error } = await state.supabase
+    .from(BATCHES_TABLE)
+    .delete()
+    .eq("branch_id", Number(branchId));
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function countBatchesByBranch(branchId) {
+  if (!state.supabase) {
+    return getLocalBatches().filter((batch) => String(batch.branchId) === String(branchId)).length;
+  }
+
+  const { count, error } = await state.supabase
+    .from(BATCHES_TABLE)
+    .select("id", { count: "exact", head: true })
+    .eq("branch_id", Number(branchId));
+
+  if (error) {
+    throw error;
+  }
+
+  return count || 0;
+}
+
 async function createContact(payload) {
   const { data, error } = await state.supabase
     .from(CONTACTS_TABLE)
@@ -1167,19 +1314,21 @@ async function handleBranchDelete(event) {
   const branchName = getBranchName(branchId);
   const contactCount = state.contacts.filter((contact) => String(contact.branch_id) === String(branchId)).length;
   let programCount = 0;
+  let batchCount = 0;
 
   try {
     programCount = await countProgramsByBranch(branchId);
+    batchCount = await countBatchesByBranch(branchId);
   } catch (error) {
-    setBranchHelper(`Could not check linked programs: ${error.message}`, true);
+    setBranchHelper(`Could not check linked data: ${error.message}`, true);
     return;
   }
 
-  const hasLinkedData = Boolean(contactCount || programCount);
+  const hasLinkedData = Boolean(contactCount || programCount || batchCount);
 
   const confirmed = window.confirm(
     hasLinkedData
-      ? `Delete branch "${branchName}" and its ${contactCount} contact${contactCount === 1 ? "" : "s"} and ${programCount} program${programCount === 1 ? "" : "s"}?`
+      ? `Delete branch "${branchName}" and its ${contactCount} contact${contactCount === 1 ? "" : "s"}, ${programCount} program${programCount === 1 ? "" : "s"}, and ${batchCount} batch${batchCount === 1 ? "" : "es"}?`
       : `Delete branch "${branchName}"?`,
   );
   if (!confirmed) {
@@ -1188,7 +1337,7 @@ async function handleBranchDelete(event) {
 
   const reconfirmed = window.confirm(
     hasLinkedData
-      ? `This will permanently remove "${branchName}", ${contactCount} linked contact${contactCount === 1 ? "" : "s"}, and ${programCount} linked program${programCount === 1 ? "" : "s"}. Continue?`
+      ? `This will permanently remove "${branchName}", ${contactCount} linked contact${contactCount === 1 ? "" : "s"}, ${programCount} linked program${programCount === 1 ? "" : "s"}, and ${batchCount} linked batch${batchCount === 1 ? "" : "es"}. Continue?`
       : `This will permanently remove "${branchName}". Continue?`,
   );
   if (!reconfirmed) {
@@ -1203,6 +1352,9 @@ async function handleBranchDelete(event) {
     }
     if (programCount) {
       await deleteProgramsByBranch(branchId);
+    }
+    if (batchCount) {
+      await deleteBatchesByBranch(branchId);
     }
     await deleteBranch(branchId);
     removeBranchFromState(branchId);
@@ -1367,8 +1519,15 @@ async function init() {
     deleteProgram,
     deleteProgramsByBranch,
     countProgramsByBranch,
+    loadBatches,
+    upsertBatch,
+    deleteBatch,
+    deleteBatchesByBranch,
+    countBatchesByBranch,
     getCachedPrograms: getLocalPrograms,
     setCachedPrograms: setLocalPrograms,
+    getCachedBatches: getLocalBatches,
+    setCachedBatches: setLocalBatches,
     setStatusMessage,
   };
   bindEvents();

@@ -45,6 +45,18 @@ create table if not exists public.programs (
   contact_ids jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
+
+create table if not exists public.batches (
+  id text primary key,
+  branch_id bigint not null references public.branches(id) on delete restrict,
+  name text not null,
+  start_time time,
+  end_time time,
+  participant_capacity integer not null default 0,
+  participant_count integer not null default 0,
+  contact_ids jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
 ```
 
 ## 2. Allow the static site to use the table
@@ -57,6 +69,7 @@ Run this SQL:
 alter table public.branches enable row level security;
 alter table public.contacts enable row level security;
 alter table public.programs enable row level security;
+alter table public.batches enable row level security;
 
 create policy "anon can read branches"
 on public.branches
@@ -132,6 +145,31 @@ on public.programs
 for delete
 to anon
 using (true);
+
+create policy "anon can read batches"
+on public.batches
+for select
+to anon
+using (true);
+
+create policy "anon can insert batches"
+on public.batches
+for insert
+to anon
+with check (true);
+
+create policy "anon can update batches"
+on public.batches
+for update
+to anon
+using (true)
+with check (true);
+
+create policy "anon can delete batches"
+on public.batches
+for delete
+to anon
+using (true);
 ```
 
 Important: this makes the table openly accessible to anyone with your public site and anon key. It is fine for a private internal tool, but not for a public production CRM.
@@ -189,6 +227,7 @@ Important:
 - Highlight follow-ups due today or overdue
 - Separate `Contacts` and `Programs` tabs in the same CRM
 - Programs tab for scheduling programs and linking contacts
+- Batches tab for managing time slots, capacity, participant counts, and linked contacts
 - Programs stored in Supabase with browser localStorage used only as cache
 
 ## Programs Note
@@ -254,7 +293,20 @@ create table if not exists public.programs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.batches (
+  id text primary key,
+  branch_id bigint not null references public.branches(id) on delete restrict,
+  name text not null,
+  start_time time,
+  end_time time,
+  participant_capacity integer not null default 0,
+  participant_count integer not null default 0,
+  contact_ids jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 alter table public.programs enable row level security;
+alter table public.batches enable row level security;
 
 create policy "anon can read programs"
 on public.programs
@@ -277,6 +329,31 @@ with check (true);
 
 create policy "anon can delete programs"
 on public.programs
+for delete
+to anon
+using (true);
+
+create policy "anon can read batches"
+on public.batches
+for select
+to anon
+using (true);
+
+create policy "anon can insert batches"
+on public.batches
+for insert
+to anon
+with check (true);
+
+create policy "anon can update batches"
+on public.batches
+for update
+to anon
+using (true)
+with check (true);
+
+create policy "anon can delete batches"
+on public.batches
 for delete
 to anon
 using (true);

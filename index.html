@@ -52,10 +52,12 @@
     <div class="workspace-bar">
       <nav class="tab-bar" aria-label="CRM sections">
         <button class="tab-btn active" id="programsTabBtn" type="button" onclick="window.switchCRMTab && window.switchCRMTab('programs')">Programs</button>
+        <button class="tab-btn" id="batchesTabBtn" type="button" onclick="window.switchCRMTab && window.switchCRMTab('batches')">Batches</button>
         <button class="tab-btn" id="contactsTabBtn" type="button" onclick="window.switchCRMTab && window.switchCRMTab('contacts')">Contacts</button>
       </nav>
       <div class="workspace-actions">
         <button class="workspace-primary-btn" id="addProgramBtn" type="button">Add Program</button>
+        <button class="workspace-primary-btn hidden" id="addBatchBtn" type="button">Add Batch</button>
         <button class="workspace-primary-btn hidden" id="addContactBtn" type="button">Add Contact</button>
       </div>
     </div>
@@ -176,6 +178,56 @@
             <tbody id="programsTableBody">
               <tr>
                 <td colspan="6" class="empty-state-cell">No programs yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section id="batchesView" class="hidden">
+      <section class="summary-grid" aria-label="Batches summary">
+        <article class="summary-card">
+          <span>Total Batches</span>
+          <strong id="batchesCount">0</strong>
+        </article>
+        <article class="summary-card">
+          <span>Total Capacity</span>
+          <strong id="batchesCapacity">0</strong>
+        </article>
+        <article class="summary-card">
+          <span>Current Participants</span>
+          <strong id="batchesParticipants">0</strong>
+        </article>
+      </section>
+
+      <section class="panel controls-panel">
+        <div class="controls-row">
+          <label class="field search-field">
+            <span>Search Batches</span>
+            <input id="batchSearchInput" type="search" placeholder="Search batch name, time, or linked contact">
+          </label>
+        </div>
+        <p class="filter-count filter-count-soft" id="batchFilterCount">Showing 0 of 0 batches</p>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="table-wrap">
+          <table class="batches-table">
+            <thead>
+              <tr>
+                <th>Batch</th>
+                <th>Branch</th>
+                <th>Time</th>
+                <th>Capacity</th>
+                <th>Current Count</th>
+                <th>Linked Contacts</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="batchesTableBody">
+              <tr>
+                <td colspan="7" class="empty-state-cell">No batches yet.</td>
               </tr>
             </tbody>
           </table>
@@ -352,6 +404,84 @@
           <button class="table-action delete-action hidden" id="deleteProgramBtn" type="button">Delete Program</button>
           <button class="ghost-btn" id="cancelProgramBtn" type="button">Cancel</button>
           <button class="primary-btn" type="submit">Save Program</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="batchModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="batchModalTitle">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Batch Form</p>
+          <h2 id="batchModalTitle">Add Batch</h2>
+        </div>
+        <button class="icon-btn" id="closeBatchModalBtn" type="button" aria-label="Close batch form">&times;</button>
+      </div>
+
+      <form id="batchForm">
+        <input type="hidden" id="batchId">
+
+        <div class="form-grid">
+          <label class="field">
+            <span>Batch Name</span>
+            <input id="batchName" name="name" type="text" placeholder="Morning Beginner Batch" required>
+          </label>
+
+          <label class="field">
+            <span>Participant Capacity</span>
+            <input id="batchCapacity" name="participant_capacity" type="number" min="1" placeholder="25" required>
+          </label>
+
+          <label class="field">
+            <span>Start Time</span>
+            <input id="batchStartTime" name="start_time" type="time" required>
+          </label>
+
+          <label class="field">
+            <span>End Time</span>
+            <input id="batchEndTime" name="end_time" type="time" required>
+          </label>
+
+          <label class="field">
+            <span>Current Participant Count</span>
+            <input id="batchParticipantCount" name="participant_count" type="number" min="0" placeholder="0" required>
+          </label>
+
+          <div class="field full-width">
+            <div class="program-link-toolbar">
+              <label class="field compact-field">
+                <span>Filter Students</span>
+                <select id="batchStudentTypeFilter">
+                  <option value="all">All students</option>
+                  <option value="regular_sessions">Regular Sessions</option>
+                  <option value="hatha_yoga">Hatha Yoga</option>
+                </select>
+              </label>
+              <label class="field compact-field">
+                <span>Filter Status</span>
+                <select id="batchStatusFilter">
+                  <option value="all">All statuses</option>
+                  <option value="lead">Lead</option>
+                  <option value="trial">Trial</option>
+                  <option value="joined">Joined</option>
+                  <option value="completed">Completed</option>
+                  <option value="dropped">Dropped</option>
+                  <option value="dried">Dried</option>
+                </select>
+              </label>
+            </div>
+            <div class="program-contact-grid" id="batchContactsGrid">
+              <p class="helper-text">Select a branch first to see matching contacts.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="table-action delete-action hidden" id="deleteBatchBtn" type="button">Delete Batch</button>
+          <button class="ghost-btn" id="cancelBatchBtn" type="button">Cancel</button>
+          <button class="primary-btn" type="submit">Save Batch</button>
         </div>
       </form>
     </div>
