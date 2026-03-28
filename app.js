@@ -324,10 +324,7 @@ function getBranchName(branchId) {
 
 function updateSummary() {
   const scopedContacts = getBranchScopedContacts();
-  const dueCount = scopedContacts.filter((contact) => {
-    const followupState = getFollowupState(contact.next_followup);
-    return followupState === "today" || followupState === "overdue";
-  }).length;
+  const dueCount = scopedContacts.filter((contact) => Boolean(contact.next_followup)).length;
 
   elements.totalContacts.textContent = String(scopedContacts.length);
   elements.dueContacts.textContent = String(dueCount);
