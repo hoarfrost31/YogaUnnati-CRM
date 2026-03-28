@@ -1,6 +1,8 @@
 const PROGRAMS_STORAGE_KEY = "yoga-crm-programs";
 const BATCHES_STORAGE_KEY = "yoga-crm-batches";
 const PROGRAMS_ACTIVE_BRANCH_STORAGE_KEY = "yoga-crm-active-branch";
+const PROGRAMS_MIGRATION_FLAG_KEY = "yoga-crm-programs-migration-complete";
+const BATCHES_MIGRATION_FLAG_KEY = "yoga-crm-batches-migration-complete";
 const DEFAULT_WHATSAPP_TEMPLATE = `Namaskaram {{name}} 🙏
 
 Reminder for {{program}}
@@ -130,6 +132,20 @@ function getPersistedActiveBranchId() {
 function getInitialActiveBranchId() {
   const crmActiveBranchId = getCRMActiveBranchId();
   return crmActiveBranchId !== "all" ? crmActiveBranchId : getPersistedActiveBranchId();
+}
+
+function isMigrationComplete(storageKey) {
+  try {
+    return window.localStorage.getItem(storageKey) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function markMigrationComplete(storageKey) {
+  try {
+    window.localStorage.setItem(storageKey, "true");
+  } catch {}
 }
 
 function areCRMBranchesLoaded() {
@@ -330,11 +346,13 @@ async function fetchProgramsFromSupabase({ migrateCache = true } = {}) {
 
   try {
     const remotePrograms = (await api.loadPrograms()).map(normalizeProgram).filter(Boolean);
-    if (migrateCache) {
+    const shouldMigrate = migrateCache && !isMigrationComplete(PROGRAMS_MIGRATION_FLAG_KEY);
+    if (shouldMigrate) {
       await migrateCachedProgramsToSupabase(remotePrograms);
+      markMigrationComplete(PROGRAMS_MIGRATION_FLAG_KEY);
     }
 
-    const nextPrograms = migrateCache
+    const nextPrograms = shouldMigrate
       ? (await api.loadPrograms()).map(normalizeProgram).filter(Boolean)
       : remotePrograms;
 
@@ -536,11 +554,13 @@ async function fetchBatchesFromSupabase({ migrateCache = true } = {}) {
 
   try {
     const remoteBatches = (await api.loadBatches()).map(normalizeBatch).filter(Boolean);
-    if (migrateCache) {
+    const shouldMigrate = migrateCache && !isMigrationComplete(BATCHES_MIGRATION_FLAG_KEY);
+    if (shouldMigrate) {
       await migrateCachedBatchesToSupabase(remoteBatches);
+      markMigrationComplete(BATCHES_MIGRATION_FLAG_KEY);
     }
 
-    const nextBatches = migrateCache
+    const nextBatches = shouldMigrate
       ? (await api.loadBatches()).map(normalizeBatch).filter(Boolean)
       : remoteBatches;
 
