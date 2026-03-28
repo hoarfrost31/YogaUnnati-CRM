@@ -1,6 +1,6 @@
 const PROGRAMS_STORAGE_KEY = "yoga-crm-programs";
 const BATCHES_STORAGE_KEY = "yoga-crm-batches";
-const ACTIVE_BRANCH_STORAGE_KEY = "yoga-crm-active-branch";
+const PROGRAMS_ACTIVE_BRANCH_STORAGE_KEY = "yoga-crm-active-branch";
 const DEFAULT_WHATSAPP_TEMPLATE = `Namaskaram {{name}} 🙏
 
 Reminder for {{program}}
@@ -121,7 +121,7 @@ function getCRMActiveBranchId() {
 
 function getPersistedActiveBranchId() {
   try {
-    return window.localStorage.getItem(ACTIVE_BRANCH_STORAGE_KEY) || "all";
+    return window.localStorage.getItem(PROGRAMS_ACTIVE_BRANCH_STORAGE_KEY) || "all";
   } catch {
     return "all";
   }
@@ -578,6 +578,10 @@ function getContactStudentType(contactId) {
   return contact?.student_type || "regular_sessions";
 }
 
+function hasCRMContactsLoaded() {
+  return Array.isArray(window.crmData?.contacts) && window.crmData.contacts.length > 0;
+}
+
 function normalizeExplicitInternationalNumber(rawValue, digits) {
   if (!String(rawValue || "").trim().startsWith("+")) {
     return "";
@@ -985,7 +989,7 @@ function renderProgramsTable() {
   if (!programs.length) {
     programEls.programsTableBody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-state-cell">No programs found for this branch or search.</td>
+        <td colspan="5" class="empty-state-cell">No programs found for this branch or search.</td>
       </tr>
     `;
     renderProgramSummary();
@@ -993,7 +997,9 @@ function renderProgramsTable() {
   }
 
   programEls.programsTableBody.innerHTML = programs.map((program) => {
-    const linkedContacts = (program.contactIds || []).length
+    const linkedContacts = !hasCRMContactsLoaded()
+      ? '<span class="muted-text">Loading contacts...</span>'
+      : (program.contactIds || []).length
       ? program.contactIds.map((contactId) => {
         const studentType = getContactStudentType(contactId);
         return `<button class="program-pill program-pill-${escapeHtml(studentType)}" type="button" data-program-contact-id="${contactId}">${escapeHtml(getContactName(contactId))}</button>`;
@@ -1003,7 +1009,6 @@ function renderProgramsTable() {
     return `
       <tr>
         <td><strong>${program.name}</strong></td>
-        <td>${getBranchName(program.branchId)}</td>
         <td>${program.scheduledFor || "-"}</td>
         <td class="programs-cell">${linkedContacts}</td>
         <td class="note-cell program-note-cell">${program.notes || "-"}</td>
@@ -1175,6 +1180,7 @@ async function deleteCurrentProgram(event) {
     await api.deleteProgram(program.id);
     programUiState.programs = programUiState.programs.filter((item) => String(item.id) !== String(program.id));
     saveProgramsToStorage();
+    await fetchProgramsFromSupabase({ migrateCache: false });
     closeProgramModal();
     renderProgramsTable();
     api.setStatusMessage?.("Program deleted.");
@@ -1313,7 +1319,7 @@ function renderBatchesTable() {
   if (!batches.length) {
     programEls.batchesTableBody.innerHTML = `
       <tr>
-        <td colspan="7" class="empty-state-cell">No batches found for this branch or search.</td>
+        <td colspan="6" class="empty-state-cell">No batches found for this branch or search.</td>
       </tr>
     `;
     renderBatchSummary();
@@ -1321,7 +1327,9 @@ function renderBatchesTable() {
   }
 
   programEls.batchesTableBody.innerHTML = batches.map((batch) => {
-    const linkedContacts = (batch.contactIds || []).length
+    const linkedContacts = !hasCRMContactsLoaded()
+      ? '<span class="muted-text">Loading contacts...</span>'
+      : (batch.contactIds || []).length
       ? batch.contactIds.map((contactId) => {
         const studentType = getContactStudentType(contactId);
         return `<button class="program-pill program-pill-${escapeHtml(studentType)}" type="button" data-batch-contact-id="${contactId}">${escapeHtml(getContactName(contactId))}</button>`;
@@ -1331,7 +1339,6 @@ function renderBatchesTable() {
     return `
       <tr>
         <td><strong>${escapeHtml(batch.name)}</strong></td>
-        <td>${getBranchName(batch.branchId)}</td>
         <td>${escapeHtml(formatBatchTime(batch))}</td>
         <td>${escapeHtml(String(batch.participantCapacity || 0))}</td>
         <td>${escapeHtml(String(batch.participantCount || 0))}</td>
@@ -1490,6 +1497,7 @@ async function deleteCurrentBatch(event) {
     await api.deleteBatch(batch.id);
     programUiState.batches = programUiState.batches.filter((item) => String(item.id) !== String(batch.id));
     saveBatchesToStorage();
+    await fetchBatchesFromSupabase({ migrateCache: false });
     closeBatchModal();
     renderBatchesTable();
     api.setStatusMessage?.("Batch deleted.");

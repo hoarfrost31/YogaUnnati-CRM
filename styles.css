@@ -1108,19 +1108,17 @@ code {
   .contacts-table tbody td:nth-child(9)::before { content: "Actions"; }
 
   .programs-table tbody td:nth-child(1)::before { content: "Program"; }
-  .programs-table tbody td:nth-child(2)::before { content: "Branch"; }
-  .programs-table tbody td:nth-child(3)::before { content: "Scheduled"; }
-  .programs-table tbody td:nth-child(4)::before { content: "Linked Contacts"; }
-  .programs-table tbody td:nth-child(5)::before { content: "Notes"; }
-  .programs-table tbody td:nth-child(6)::before { content: "Actions"; }
+  .programs-table tbody td:nth-child(2)::before { content: "Scheduled"; }
+  .programs-table tbody td:nth-child(3)::before { content: "Linked Contacts"; }
+  .programs-table tbody td:nth-child(4)::before { content: "Notes"; }
+  .programs-table tbody td:nth-child(5)::before { content: "Actions"; }
 
   .batches-table tbody td:nth-child(1)::before { content: "Batch"; }
-  .batches-table tbody td:nth-child(2)::before { content: "Branch"; }
-  .batches-table tbody td:nth-child(3)::before { content: "Time"; }
-  .batches-table tbody td:nth-child(4)::before { content: "Capacity"; }
-  .batches-table tbody td:nth-child(5)::before { content: "Current Count"; }
-  .batches-table tbody td:nth-child(6)::before { content: "Linked Contacts"; }
-  .batches-table tbody td:nth-child(7)::before { content: "Actions"; }
+  .batches-table tbody td:nth-child(2)::before { content: "Time"; }
+  .batches-table tbody td:nth-child(3)::before { content: "Capacity"; }
+  .batches-table tbody td:nth-child(4)::before { content: "Current Count"; }
+  .batches-table tbody td:nth-child(5)::before { content: "Linked Contacts"; }
+  .batches-table tbody td:nth-child(6)::before { content: "Actions"; }
 
   .empty-state-cell {
     padding: 18px 14px;
