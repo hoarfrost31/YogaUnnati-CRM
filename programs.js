@@ -1338,10 +1338,10 @@ function renderBatchesTable() {
 
     return `
       <tr>
-        <td><strong>${escapeHtml(batch.name)}</strong></td>
-        <td>${escapeHtml(formatBatchTime(batch))}</td>
-        <td>${escapeHtml(String(batch.participantCapacity || 0))}</td>
-        <td>${escapeHtml(String(batch.participantCount || 0))}</td>
+        <td class="batch-name-cell"><strong>${escapeHtml(batch.name)}</strong></td>
+        <td class="batch-time-cell">${escapeHtml(formatBatchTime(batch))}</td>
+        <td class="batch-capacity-cell">${escapeHtml(String(batch.participantCapacity || 0))}</td>
+        <td class="batch-count-cell">${escapeHtml(String(batch.participantCount || 0))}</td>
         <td class="programs-cell">${linkedContacts}</td>
         <td class="actions-cell program-actions-cell">
           <div class="actions-group">

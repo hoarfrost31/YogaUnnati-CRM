@@ -786,6 +786,13 @@ textarea {
   min-width: 200px;
 }
 
+.batch-name-cell strong,
+.batch-count-cell,
+.batch-capacity-cell,
+.batch-time-cell {
+  display: block;
+}
+
 .program-note-cell {
   max-width: 420px;
   min-width: 320px;
@@ -1149,6 +1156,31 @@ code {
     max-width: 100%;
     white-space: normal;
     text-align: left;
+  }
+
+  .batch-name-cell strong {
+    font-size: 1rem;
+  }
+
+  .batch-time-cell,
+  .batch-capacity-cell,
+  .batch-count-cell {
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .batches-table .programs-cell {
+    padding-top: 12px;
+  }
+
+  .batches-table .program-pill {
+    display: block;
+    width: 100%;
+    margin: 0 0 8px;
+  }
+
+  .batches-table .actions-group {
+    gap: 10px;
   }
 
   .branch-item {
