@@ -28,6 +28,7 @@ function publishCRMData() {
     contacts: state.contacts,
     branches: state.branches,
     branchesLoaded: state.branchesLoaded,
+    activeBranchId: state.activeBranchId,
   };
   window.dispatchEvent(new CustomEvent("crm:data-updated"));
 }
@@ -124,17 +125,52 @@ function loadPersistedActiveBranch() {
 function persistActiveBranch() {
   try {
     window.localStorage.setItem(ACTIVE_BRANCH_STORAGE_KEY, String(state.activeBranchId || "all"));
-    const branchName = state.activeBranchId === "all" ? "All Branches" : getBranchName(state.activeBranchId);
+    const currentStoredName = loadPersistedActiveBranchName();
+    const branchName = state.activeBranchId === "all"
+      ? "All Branches"
+      : state.branchesLoaded
+        ? getBranchName(state.activeBranchId)
+        : currentStoredName;
+
+    if (!branchName || branchName === "Loading branch...") {
+      return;
+    }
+
     window.localStorage.setItem(ACTIVE_BRANCH_NAME_STORAGE_KEY, branchName);
   } catch {}
 }
 
 function loadPersistedActiveBranchName() {
   try {
-    return window.localStorage.getItem(ACTIVE_BRANCH_NAME_STORAGE_KEY) || "All Branches";
+    const storedName = window.localStorage.getItem(ACTIVE_BRANCH_NAME_STORAGE_KEY);
+    if (!storedName || storedName === "Loading branch...") {
+      return "All Branches";
+    }
+
+    return storedName;
   } catch {
     return "All Branches";
   }
+}
+
+function restorePersistedActiveBranchSelection() {
+  const persistedBranchId = loadPersistedActiveBranch();
+
+  if (persistedBranchId === "all") {
+    state.activeBranchId = "all";
+    persistActiveBranch();
+    return;
+  }
+
+  const matchingBranch = state.branches.find((branch) => String(branch.id) === String(persistedBranchId));
+  if (matchingBranch) {
+    state.activeBranchId = String(matchingBranch.id);
+    persistActiveBranch();
+    return;
+  }
+
+  state.activeBranchId = "all";
+  persistActiveBranch();
 }
 
 function formatDate(value) {
@@ -314,10 +350,6 @@ function getFilteredContacts() {
 }
 
 function getBranchName(branchId) {
-  if (branchId && !state.branchesLoaded) {
-    return "Loading branch...";
-  }
-
   const branch = state.branches.find((item) => String(item.id) === String(branchId));
   return branch?.name || "Unassigned";
 }
@@ -404,12 +436,17 @@ function updateBranchTriggerLabel() {
     return;
   }
 
-  if (!state.branchesLoaded) {
-    elements.manageBranchesLabel.textContent = loadPersistedActiveBranchName();
+  const loadedBranch = state.branches.find((branch) => String(branch.id) === String(state.activeBranchId));
+  if (loadedBranch?.name) {
+    elements.manageBranchesLabel.textContent = loadedBranch.name;
     return;
   }
 
-  elements.manageBranchesLabel.textContent = getBranchName(state.activeBranchId);
+  const persistedName = loadPersistedActiveBranchName();
+  elements.manageBranchesLabel.textContent =
+    persistedName && persistedName !== "All Branches"
+      ? persistedName
+      : "Selected Branch";
 }
 
 function toggleBranchDropdown(forceOpen = null) {
@@ -682,8 +719,12 @@ function getFormPayload() {
 async function loadBranches() {
   if (!state.supabase) {
     state.branchesLoaded = true;
+    restorePersistedActiveBranchSelection();
     renderBranchOptions();
     renderBranchList();
+    renderBranchDropdown();
+    updateBranchTriggerLabel();
+    publishCRMData();
     return;
   }
 
@@ -699,6 +740,7 @@ async function loadBranches() {
 
   state.branches = data || [];
   state.branchesLoaded = true;
+  restorePersistedActiveBranchSelection();
   renderBranchOptions();
   renderBranchList();
   renderBranchDropdown();

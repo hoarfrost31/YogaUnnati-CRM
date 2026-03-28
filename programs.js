@@ -82,6 +82,10 @@ function getCRMBranches() {
   return window.crmData?.branches || [];
 }
 
+function getCRMActiveBranchId() {
+  return window.crmData?.activeBranchId || "all";
+}
+
 function areCRMBranchesLoaded() {
   return Boolean(window.crmData?.branchesLoaded);
 }
@@ -999,6 +1003,7 @@ function bindProgramEvents() {
   programEls.programsTableBody.addEventListener("click", handleProgramTableActions);
 
   window.addEventListener("crm:data-updated", () => {
+    programUiState.activeBranchId = getCRMActiveBranchId();
     syncProgramsWithCRM();
     renderProgramBranchOptions();
     renderProgramsTable();
@@ -1025,6 +1030,7 @@ function bindProgramEvents() {
 }
 
 loadProgramsFromStorage();
+programUiState.activeBranchId = getCRMActiveBranchId();
 syncProgramsWithCRM();
 bindProgramEvents();
 setProgramTab("programs");
